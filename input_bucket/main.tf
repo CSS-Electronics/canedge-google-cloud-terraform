@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/google"
       version = ">= 4.84.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.5.0"
+    }
   }
   
   # Using local state for input bucket creation
@@ -44,10 +48,15 @@ resource "google_storage_hmac_key" "key" {
   service_account_email = google_service_account.storage_admin.email
 }
 
+# Generate a random string for service account naming
+resource "random_id" "sa_prefix" {
+  byte_length = 4
+}
+
 # Service account for HMAC key
 resource "google_service_account" "storage_admin" {
-  # Use bucket name but ensure it's valid for a service account ID (remove hyphens, limit length)
-  account_id   = "sa-${replace(substr(replace(var.bucket_name, "-", ""), 0, 24), ".", "")}" 
+  # Use a random ID to ensure we stay within naming constraints
+  account_id   = "sa-canedge-${random_id.sa_prefix.hex}"
   display_name = "Storage Admin for ${var.bucket_name}"
 }
 
