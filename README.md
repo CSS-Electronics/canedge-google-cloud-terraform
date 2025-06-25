@@ -54,7 +54,8 @@ Replace:
 - `YOUR_EMAIL` with your email address to receive notifications
 - `YOUR_FUNCTION_ZIP` with the function ZIP file name (e.g. `mdf-to-parquet-google-function-v3.1.0.zip`)
 
-**Note:** If the deployment fails with a message regarding Eventarc propagation delay, simply re-run the deployment after a few minutes to complete it.
+> [!IMPORTANT]  
+> If the deployment fails with a message regarding Eventarc propagation delay, simply re-run the deployment after a few minutes to complete it.
 
 ### 3: Deploy BigQuery
 
