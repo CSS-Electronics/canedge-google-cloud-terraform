@@ -23,6 +23,7 @@ This repository provides Terraform configurations to automate the deployment of 
 cd ~ && rm -rf canedge-google-cloud-terraform && git clone https://github.com/CSS-Electronics/canedge-google-cloud-terraform.git && cd canedge-google-cloud-terraform
 ```
 
+&nbsp;
 
 ### 1: Deploy Input Bucket
 
@@ -37,7 +38,7 @@ Replace:
 - `YOUR_REGION` with your desired region (e.g., `europe-west1` - see [this link](https://cloud.google.com/storage/docs/locations#location-r) for available regions)
 - `YOUR_BUCKET_NAME` with your desired bucket name (e.g. `canedge-test-bucket-20`)
 
-
+&nbsp;
 
 ### 2: Deploy MF4-to-Parquet Pipeline
 
@@ -53,9 +54,16 @@ Replace:
 - `YOUR_UNIQUE_ID` with a short unique identifier (e.g. `datalake1`)
 - `YOUR_EMAIL` with your email address to receive notifications
 - `YOUR_FUNCTION_ZIP` with the function ZIP file name (e.g. `mdf-to-parquet-google-function-v3.1.0.zip`)
+  - *Download the ZIP from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake/Google)*
+
+
+> [!NOTE]  
+> Make sure to upload the ZIP to your input bucket root before deployment 
 
 > [!IMPORTANT]  
 > If the deployment fails with a message regarding Eventarc propagation delay, simply re-run the deployment after a few minutes to complete it.
+
+&nbsp;
 
 ### 3: Deploy BigQuery
 
@@ -68,9 +76,13 @@ chmod +x deploy_bigquery.sh && ./deploy_bigquery.sh --project YOUR_PROJECT_ID --
 Replace:
 - `YOUR_PROJECT_ID` with your Google Cloud project ID
 - `YOUR_INPUT_BUCKET_NAME` with your input bucket name
-- `YOUR_UNIQUE_ID` with the same unique identifier used in the previous step
+- `YOUR_UNIQUE_ID` with the same unique identifier used in the previous step (e.g. `datalake1`)
 - `YOUR_DATASET_NAME` with your desired BigQuery dataset name (e.g. `dataset1`)
 - `YOUR_FUNCTION_ZIP` with the BigQuery function ZIP file name (e.g. `bigquery-map-tables-v1.1.0.zip`)
+  - *Download the ZIP from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake - interfaces/Google)*
+
+> [!NOTE]  
+> Make sure to upload the ZIP to your input bucket root before deployment 
 
 ----------
 
@@ -78,6 +90,7 @@ Replace:
 
 If you encounter issues with either deployment:
 
+- When deploying the MF4-to-Parquet pipeline for the first time in a Google project, the deployment may fail due to propagation delay on Eventarc permissions - in this case, simply re-run the deployment after a few minutes
 - Make sure you have proper permissions in your Google Cloud project
 - Use unique identifiers with the `--id` parameter to avoid resource conflicts
 - Check the Google Cloud Console logs for detailed error messages

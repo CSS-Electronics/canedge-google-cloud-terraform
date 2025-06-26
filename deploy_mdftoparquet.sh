@@ -380,4 +380,22 @@ if [ $DEPLOY_STATUS -eq 0 ]; then
   echo "Service account key saved to: gs://${BUCKET_NAME}/${KEY_FILE}"
   echo
   echo 
+else 
+  echo 
+  echo 
+  echo 
+  echo "---------------------------"
+  echo "❌  Deployment failed"
+  echo
+  if [ "$FUNCTION_EXISTS" = false ]; then
+    echo "The failure may be expected if this is your first deployment."
+    echo "If the error message mentions 'propagation delay on the Eventarc Service Agent',"
+    echo "please wait a few minutes and then run this script again."
+    echo "This is a known issue with Google Cloud's IAM permission propagation."
+  else
+    echo "Please review the error messages above for troubleshooting guidance."
+  fi
+  echo
+  echo "If problems persist, please contact support."
+  echo "---------------------------"
 fi
