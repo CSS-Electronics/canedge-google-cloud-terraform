@@ -78,7 +78,7 @@ Replace:
 - `YOUR_INPUT_BUCKET_NAME` with your input bucket name
 - `YOUR_UNIQUE_ID` with the same unique identifier used in the previous step (e.g. `datalake1`)
 - `YOUR_DATASET_NAME` with your desired BigQuery dataset name (e.g. `dataset1`)
-- `YOUR_FUNCTION_ZIP` with the BigQuery function ZIP file name (e.g. `bigquery-map-tables-v1.1.0.zip`)
+- `YOUR_FUNCTION_ZIP` with the BigQuery function ZIP file name (e.g. `bigquery-map-tables-vT.3.0.zip`)
   - *Download the ZIP from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake - interfaces/Google)*
 
 > [!NOTE]  

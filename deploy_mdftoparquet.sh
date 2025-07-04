@@ -389,7 +389,7 @@ else
   echo
   if [ "$FUNCTION_EXISTS" = false ]; then
     echo "The failure may be expected if this is your first deployment."
-    echo "If the error message mentions 'propagation delay on the Eventarc Service Agent',"
+    echo "If the error message mentions propagation delay on the 'Eventarc Service Agent',"
     echo "please wait a few minutes and then run this script again."
     echo "This is a known issue with Google Cloud's IAM permission propagation."
   else

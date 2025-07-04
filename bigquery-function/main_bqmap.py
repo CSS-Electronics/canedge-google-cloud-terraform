@@ -1,7 +1,13 @@
 import functions_framework
 import os
+import re
+import json
 import logging
+import tempfile
 from google.cloud import storage, bigquery
+from google.cloud.exceptions import Conflict
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -66,63 +72,143 @@ def map_bigquery_tables(request):
     
     logger.info(f"Deleted {deleted_count} existing tables from dataset {dataset_id}")
     
-    # Crawl the bucket to get all unique combinations of deviceid and message
-    logger.info(f"Scanning bucket {bucket_output_name} for Parquet files...")
+
+    
+    # Crawl the bucket to get all unique combinations of device_id and message
     prefixes = set()
+    devices = set()
     blobs = bucket.list_blobs()
     for blob in blobs:
         parts = blob.name.split('/')
         if len(parts) >= 3:
-            device_message = '/'.join(parts[0:2])
-            prefixes.add(device_message)
-    
-    logger.info(f"Found {len(prefixes)} unique device/message combinations")
-    
-    # Process each unique deviceid/message combination
-    for prefix in prefixes:
-        deviceid, message = prefix.split('/')
-        table_id = f"{project_id}.{dataset_id}.tbl_{deviceid}_{message}"
+            top_prefix, message = parts[:2]
+            if re.match(r"^[0-9A-F]{8}$", top_prefix):  # Ensure only valid device IDs
+                prefixes.add(f"{top_prefix}/{message}")
+                devices.add(top_prefix)
+
+    # Ensure meta Parquet files are always created before table mappings
+    metadata_list = []
+    for device_id in devices:
+        device_json_path = f"{device_id}/device.json"
+        metaname = device_id.upper()
         
-        # Construct the URI pattern to match Parquet files for the combination
+        try:
+            # Assuming we should use the same bucket for input and output
+            blob = bucket.blob(device_json_path)
+            device_meta = json.loads(blob.download_as_text())
+            log_meta = device_meta.get("log_meta", "")
+            if log_meta:
+                metaname = f"{log_meta} ({device_id.upper()})"
+        except Exception as e:
+            print(f"Unable to extract meta data from device.json for {device_id}: {e}")
+        
+        metadata_list.append({"MetaName": metaname, "DeviceId": device_id})
+
+    # Save metadata to Parquet
+    meta_path = "aggregations/devicemeta/2024/01/01/devicemeta.parquet"
+    meta_table_id = f"{project_id}.{dataset_id}.tbl_aggregations_devicemeta"
+    if metadata_list:
+        meta_table = pa.Table.from_pydict({
+            "MetaName": [item['MetaName'] for item in metadata_list],
+            "DeviceId": [item['DeviceId'] for item in metadata_list]
+        })
+        
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
+            pq.write_table(meta_table, temp_file.name, compression='snappy')
+            blob = bucket.blob(meta_path)
+            blob.upload_from_filename(temp_file.name)
+            print(f"Device meta Parquet file successfully written to gs://{bucket_output_name}/{meta_path}")
+
+    # Create external table for devicemeta
+    source_uris = [f"gs://{bucket_output_name}/{meta_path}"]
+    external_config = bigquery.ExternalConfig('PARQUET')
+    external_config.source_uris = source_uris
+    external_config.autodetect = True
+    meta_table = bigquery.Table(meta_table_id)
+    meta_table.external_data_configuration = external_config
+    try:
+        client.create_table(meta_table)
+        print(f"- Created devicemeta table {meta_table_id}")
+        results['created'].append({
+            'table_id': meta_table_id
+        })
+    except Conflict:
+        print(f"- Devicemeta table {meta_table_id} already exists")
+    except Exception as e:
+        print(f"- Failed to create devicemeta table {meta_table_id}: {e}")
+        results['failed'].append({
+            'table_id': meta_table_id,
+            'error': str(e)
+        })
+
+    # Process each device ID to create a messages table
+    for device_id in devices:
+        messages = set()
+        for prefix in prefixes:
+            if prefix.startswith(device_id):
+                _, message = prefix.split('/')
+                messages.add(message)
+        
+        messages_list = list(messages)
+        messages_path = f"{device_id}/messages/2024/01/01/messages.parquet"
+        messages_table_id = f"{project_id}.{dataset_id}.tbl_{device_id}_messages"
+        
+        # Create and upload messages Parquet file
+        messages_table = pa.Table.from_pydict({"MessageName": messages_list})
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
+            pq.write_table(messages_table, temp_file.name, compression='snappy')
+            blob = bucket.blob(messages_path)
+            blob.upload_from_filename(temp_file.name)
+            print(f"Messages Parquet file successfully written to gs://{bucket_output_name}/{messages_path}")
+        
+        # Create external table for messages
+        source_uris = [f"gs://{bucket_output_name}/{messages_path}"]
+        external_config.source_uris = source_uris
+        messages_table = bigquery.Table(messages_table_id)
+        messages_table.external_data_configuration = external_config
+        try:
+            client.create_table(messages_table)
+            print(f"- Created messages table {messages_table_id}")
+            results['created'].append({
+                'table_id': messages_table_id
+            })
+        except Conflict:
+            print(f"- Messages table {messages_table_id} already exists")
+
+    # Process each unique device_id/message combination
+    for prefix in prefixes:
+        device_id, message = prefix.split('/')
+        table_id = f"{project_id}.{dataset_id}.tbl_{device_id}_{message}"
+        
+        # Define source URI
         source_uris = [f"gs://{bucket_output_name}/{prefix}/*"]
-    
-        # Create an external table in BigQuery
+        
+        # Create external table in BigQuery
         external_config = bigquery.ExternalConfig('PARQUET')
         external_config.source_uris = source_uris
         external_config.autodetect = True
-        external_config.ignore_unknown_values = True  # Set to ignore unknown values
-    
+        external_config.ignore_unknown_values = True
+        
         table = bigquery.Table(table_id)
         table.external_data_configuration = external_config
-    
+        
         try:
-            # Create the table in BigQuery
-            created_table = client.create_table(table)  # Make an API request.
+            client.create_table(table)
+            print(f"- Created table {table_id}")
             results['created'].append({
-                'table_id': created_table.table_id
+                'table_id': table_id
             })
-            logger.info(f"- SUCCESS: Created table {created_table.table_id}")
-        except Exception as e:
-            results['failed'].append({
-                'table_id': table_id,
-                'error': str(e)
-            })
-            logger.info(f"- WARNING: Failed to create table {table_id}, error: {str(e)}")
-                
-    # Create a summary message
-    summary_message = f"Deleted {len(results['deleted'])} tables, created {len(results['created'])} tables, and failed for {len(results['failed'])} tables."
+        except Conflict:
+            print(f"- Table {table_id} already exists")
+
+    print("\nFinished creating external tables for all device and message combinations, including messages and devicemeta tables.")
     
-    # Log the summary
-    logger.info(summary_message)
-    
-    # Create the response object
-    response = {
-        'status': 'success',
-        'results': results,
-        'message': summary_message
-    }
     
     # Return the response for API consumers
-    return (response, 200)
+    return {
+        'status': 'success',
+        'message': 'BigQuery tables mapped successfully',
+        'results': results
+    }
 
 
