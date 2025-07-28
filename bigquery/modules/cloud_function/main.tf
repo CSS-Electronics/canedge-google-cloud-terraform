@@ -35,6 +35,7 @@ resource "google_cloudfunctions2_function" "bigquery_map_tables_function" {
     timeout_seconds        = 3600  # 60 minutes
     environment_variables  = {
       OUTPUT_BUCKET  = var.output_bucket_name
+      INPUT_BUCKET   = var.input_bucket_name
       DATASET_ID     = var.dataset_id
     }
     service_account_email  = var.service_account_email

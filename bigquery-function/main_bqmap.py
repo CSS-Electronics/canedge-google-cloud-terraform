@@ -23,22 +23,24 @@ def map_bigquery_tables(request):
     """
     # Get environment variables
     bucket_output_name = os.environ.get('OUTPUT_BUCKET')
+    bucket_input_name = os.environ.get('INPUT_BUCKET')
     dataset_id = os.environ.get('DATASET_ID')
     
     # Log the start of execution
     logger.info(f"\n\nStarting BigQuery table mapping - will trawl bucket '{bucket_output_name}' to identify BigQuery tables based on the Parquet data lake structure")
     
-    if not bucket_output_name or not dataset_id:
+    if not bucket_output_name or not bucket_input_name or not dataset_id:
         return ({
             'status': 'error',
-            'message': 'Missing required environment variables: OUTPUT_BUCKET and/or DATASET_ID'
+            'message': 'Missing required environment variables: OUTPUT_BUCKET, INPUT_BUCKET and/or DATASET_ID'
         }, 400)
     
     storage_client = storage.Client()
     client = bigquery.Client()
     
     try:
-        bucket = storage_client.get_bucket(bucket_output_name)
+        output_bucket = storage_client.get_bucket(bucket_output_name)
+        input_bucket = storage_client.get_bucket(bucket_input_name)
     except Exception as e:
         return ({
             'status': 'error',
@@ -77,7 +79,7 @@ def map_bigquery_tables(request):
     # Crawl the bucket to get all unique combinations of device_id and message
     prefixes = set()
     devices = set()
-    blobs = bucket.list_blobs()
+    blobs = output_bucket.list_blobs()
     for blob in blobs:
         parts = blob.name.split('/')
         if len(parts) >= 3:
@@ -93,8 +95,8 @@ def map_bigquery_tables(request):
         metaname = device_id.upper()
         
         try:
-            # Assuming we should use the same bucket for input and output
-            blob = bucket.blob(device_json_path)
+            # Use input bucket for device.json files
+            blob = input_bucket.blob(device_json_path)
             device_meta = json.loads(blob.download_as_text())
             log_meta = device_meta.get("log_meta", "")
             if log_meta:
@@ -115,7 +117,7 @@ def map_bigquery_tables(request):
         
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
             pq.write_table(meta_table, temp_file.name, compression='snappy')
-            blob = bucket.blob(meta_path)
+            blob = output_bucket.blob(meta_path)
             blob.upload_from_filename(temp_file.name)
             print(f"Device meta Parquet file successfully written to gs://{bucket_output_name}/{meta_path}")
 
@@ -157,7 +159,7 @@ def map_bigquery_tables(request):
         messages_table = pa.Table.from_pydict({"MessageName": messages_list})
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
             pq.write_table(messages_table, temp_file.name, compression='snappy')
-            blob = bucket.blob(messages_path)
+            blob = output_bucket.blob(messages_path)
             blob.upload_from_filename(temp_file.name)
             print(f"Messages Parquet file successfully written to gs://{bucket_output_name}/{messages_path}")
         
