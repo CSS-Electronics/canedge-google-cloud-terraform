@@ -38,18 +38,25 @@ resource "google_cloudfunctions2_function" "mdf_to_parquet_backlog_function" {
     service_account_email  = var.service_account_email
   }
   
-  event_trigger {
-    trigger_region        = var.region
-    event_type            = "google.cloud.storage.object.v1.finalized"
-    retry_policy          = "RETRY_POLICY_DO_NOT_RETRY" # Disabled automatic retries to prevent infinite retry loops
-    service_account_email = var.service_account_email
-    event_filters {
-      attribute = "bucket"
-      value     = var.input_bucket_name
-    }
-  }
-
   labels = {
     goog-terraform-provisioned = "true"
   }
+}
+
+# IAM binding for Cloud Functions v2 using the gcloud-based approach
+# This uses the underlying Cloud Run service directly with the correct service name format
+
+# Get the underlying Cloud Run service name directly from the function's output
+# This is the reliable way to connect IAM permissions to Cloud Functions v2
+resource "google_cloud_run_service_iam_member" "member" {
+  project  = var.project
+  location = var.region
+  service  = google_cloudfunctions2_function.mdf_to_parquet_backlog_function.name
+  role     = "roles/run.invoker"
+  member   = "allAuthenticatedUsers"
+  
+  # Important: Make sure the function is fully deployed before setting IAM
+  depends_on = [
+    google_cloudfunctions2_function.mdf_to_parquet_backlog_function
+  ]
 }
