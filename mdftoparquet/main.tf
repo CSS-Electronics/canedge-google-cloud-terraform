@@ -59,6 +59,23 @@ module "cloud_function" {
   function_zip         = var.function_zip
 }
 
+# Cloud Function for MDF4 to Parquet backlog processing
+module "cloud_function_backlog" {
+  source = "./modules/cloud_function_backlog"
+
+  project              = var.project
+  region               = var.region
+  unique_id            = var.unique_id
+  input_bucket_name    = var.input_bucket_name
+  output_bucket_name   = module.output_bucket.output_bucket_name
+  service_account_email = module.iam.service_account_email
+  function_zip_backlog = var.function_zip_backlog
+  
+  depends_on = [
+    module.iam
+  ]
+}
+
 # Monitoring module for logging metrics and alert policies
 module "monitoring" {
   source = "./modules/monitoring"

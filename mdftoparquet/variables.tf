@@ -32,3 +32,8 @@ variable "function_zip" {
   description = "Filename of the Cloud Function ZIP file in the input bucket (e.g. mdf-to-parquet-google-function-vX.X.X.zip)"
   type        = string
 }
+
+variable "function_zip_backlog" {
+  description = "Filename of the Backlog Cloud Function ZIP file in the input bucket (e.g. mdf-to-parquet-backlog-function-vX.X.X.zip)"
+  type        = string
+}

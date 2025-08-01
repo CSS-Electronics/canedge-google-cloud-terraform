@@ -12,6 +12,11 @@ output "cloud_function_name" {
   value       = module.cloud_function.function_name
 }
 
+output "cloud_function_backlog_name" {
+  description = "Name of the deployed Backlog Cloud Function"
+  value       = module.cloud_function_backlog.function_name
+}
+
 output "service_account_email" {
   description = "Service account email used by the Cloud Function"
   value       = module.iam.service_account_email

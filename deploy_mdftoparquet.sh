@@ -27,6 +27,7 @@ show_help() {
   echo "  -b, --bucket BUCKET_NAME    Input bucket name"
   echo "  -i, --id UNIQUE_ID          Unique identifier for pipeline resources"
   echo "  -z, --zip FUNCTION_ZIP      Cloud Function ZIP filename (e.g. mdf-to-parquet-google-function-vX.X.X.zip)"
+  echo "  -zb, --zip-backlog ZIP_BACKLOG  Backlog Cloud Function ZIP filename"
   echo
   echo "Optional:"
   echo "  -e, --email EMAIL           Email address to receive notifications"
@@ -34,13 +35,13 @@ show_help() {
   echo "  -h, --help                  Show this help message"
   echo
   echo "Example:"
-  echo "  ./deploy_mdftoparquet.sh --project my-project-123 --bucket canedge-test-bucket-gcp --id canedge-demo --email user@example.com --zip mdf-to-parquet-google-function-vX.X.X.zip"
+  echo "  ./deploy_mdftoparquet.sh --project my-project-123 --bucket canedge-test-bucket-gcp --id canedge-demo --email user@example.com --zip mdf-to-parquet-google-function-vX.X.X.zip --zip-backlog mdf-to-parquet-backlog-function-vX.X.X.zip"
 }
 
 # Default values
 AUTO_APPROVE="-auto-approve" # Auto-approve by default
 NOTIFICATION_EMAIL=""         # Email for notifications
-# No default for UNIQUE_ID or FUNCTION_ZIP - user must provide them
+# No default for UNIQUE_ID, FUNCTION_ZIP, or FUNCTION_ZIP_BACKLOG - user must provide them
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -67,6 +68,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -z|--zip)
       FUNCTION_ZIP="$2"
+      shift 2
+      ;;
+    -zb|--zip-backlog)
+      FUNCTION_ZIP_BACKLOG="$2"
       shift 2
       ;;
     -y|--auto-approve)
@@ -161,6 +166,13 @@ fi
 # Check if function ZIP is provided
 if [ -z "$FUNCTION_ZIP" ]; then
   echo "Error: Function ZIP filename is required. Please specify with --zip flag."
+  show_help
+  exit 1
+fi
+
+# Check if backlog function ZIP is provided
+if [ -z "$FUNCTION_ZIP_BACKLOG" ]; then
+  echo "Error: Backlog function ZIP filename is required. Please specify with --zip-backlog flag."
   show_help
   exit 1
 fi
@@ -261,6 +273,27 @@ else
   fi
 fi
 
+# Check if the backlog ZIP file exists in the bucket
+echo "Checking if Backlog Cloud Function ZIP file exists in bucket..."
+gsutil stat "gs://${BUCKET_NAME}/${FUNCTION_ZIP_BACKLOG}" 2>&1
+BACKLOG_ZIP_CHECK=$?
+if [ $BACKLOG_ZIP_CHECK -eq 0 ]; then
+  echo "✓ Found Backlog Cloud Function ZIP file '${FUNCTION_ZIP_BACKLOG}' in bucket"
+else
+  echo "⚠️ Warning: Backlog Cloud Function ZIP file '${FUNCTION_ZIP_BACKLOG}' not found in bucket '${BUCKET_NAME}'."
+  if [[ "$AUTO_APPROVE" == "-auto-approve" ]]; then
+    echo "   Auto-approve enabled, continuing anyway..."
+  else
+    echo "   You may need to upload it manually before the function will work correctly."
+    echo "   Continue anyway? (y/n)"
+    read -r response
+    if [[ "$response" != "y" && "$response" != "Y" ]]; then
+      echo "Deployment cancelled."
+      exit 1
+    fi
+  fi
+fi
+
 # Import existing resources if they exist
 if [ "$BUCKET_EXISTS" = true ]; then
   echo "Importing existing output bucket into Terraform state..."
@@ -313,6 +346,7 @@ if [ "$FUNCTION_EXISTS" = true ]; then
     -var="unique_id=${UNIQUE_ID}" \
     -var="notification_email=${NOTIFICATION_EMAIL}" \
     -var="function_zip=${FUNCTION_ZIP}" \
+    -var="function_zip_backlog=${FUNCTION_ZIP_BACKLOG}" \
     -out=tfplan
   
   # Apply the plan without asking for confirmation
@@ -330,7 +364,8 @@ else
     -var="input_bucket_name=${BUCKET_NAME}" \
     -var="unique_id=${UNIQUE_ID}" \
     -var="notification_email=${NOTIFICATION_EMAIL}" \
-    -var="function_zip=${FUNCTION_ZIP}"
+    -var="function_zip=${FUNCTION_ZIP}" \
+    -var="function_zip_backlog=${FUNCTION_ZIP_BACKLOG}"
 fi
 
 # Check if the deployment was successful

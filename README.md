@@ -45,7 +45,7 @@ Replace:
 Once you have an input bucket set up, you can optionally deploy the processing pipeline to automatically DBC decode uploaded MF4 files to Parquet format:
 
 ```bash
-chmod +x deploy_mdftoparquet.sh && ./deploy_mdftoparquet.sh --project YOUR_PROJECT_ID --bucket YOUR_INPUT_BUCKET_NAME --id YOUR_UNIQUE_ID --email YOUR_EMAIL --zip YOUR_FUNCTION_ZIP
+chmod +x deploy_mdftoparquet.sh && ./deploy_mdftoparquet.sh --project YOUR_PROJECT_ID --bucket YOUR_INPUT_BUCKET_NAME --id YOUR_UNIQUE_ID --email YOUR_EMAIL --zip YOUR_FUNCTION_ZIP --zip-backlog YOUR_BACKLOG_FUNCTION_ZIP
 ```
 
 Replace:
@@ -55,6 +55,7 @@ Replace:
 - `YOUR_EMAIL` with your email address to receive notifications
 - `YOUR_FUNCTION_ZIP` with the function ZIP file name (e.g. `mdf-to-parquet-google-function-v3.1.0.zip`)
   - *Download the ZIP from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake/Google)*
+- `YOUR_BACKLOG_FUNCTION_ZIP` with the backlog function ZIP file name
 
 
 > [!NOTE]  
@@ -106,7 +107,8 @@ If you encounter issues with either deployment:
   - `modules/` - Terraform modules specific to the MF4-to-Parquet pipeline
     - `output_bucket/` - Module for creating the output bucket
     - `iam/` - Module for setting up IAM permissions
-    - `cloud_function/` - Module for deploying the Cloud Function
+    - `cloud_function/` - Module for deploying the main Cloud Function
+    - `cloud_function_backlog/` - Module for deploying the Backlog Cloud Function
     - `monitoring/` - Module for setting up monitoring configurations
 - `bigquery/` - Terraform configuration for BigQuery deployment
   - `modules/` - Terraform modules specific to the BigQuery deployment
