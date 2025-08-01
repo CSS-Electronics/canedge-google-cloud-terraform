@@ -26,22 +26,27 @@ show_help() {
   echo "  -p, --project PROJECT_ID    GCP Project ID"
   echo "  -b, --bucket BUCKET_NAME    Input bucket name"
   echo "  -i, --id UNIQUE_ID          Unique identifier for pipeline resources"
-  echo "  -z, --zip FUNCTION_ZIP      Cloud Function ZIP filename (e.g. mdf-to-parquet-google-function-vX.X.X.zip)"
-  echo "  -zb, --zip-backlog ZIP_BACKLOG  Backlog Cloud Function ZIP filename"
   echo
   echo "Optional:"
   echo "  -e, --email EMAIL           Email address to receive notifications"
+  echo "  -z, --zip FUNCTION_ZIP      Cloud Function ZIP filename (default: $DEFAULT_FUNCTION_ZIP)"
+  echo "  -zb, --zip-backlog ZIP_BACKLOG  Backlog Cloud Function ZIP filename (default: $DEFAULT_FUNCTION_ZIP_BACKLOG)"
   echo "  -y, --auto-approve          Skip approval prompt"
   echo "  -h, --help                  Show this help message"
   echo
   echo "Example:"
-  echo "  ./deploy_mdftoparquet.sh --project my-project-123 --bucket canedge-test-bucket-gcp --id canedge-demo --email user@example.com --zip mdf-to-parquet-google-function-vX.X.X.zip --zip-backlog mdf-to-parquet-backlog-function-vX.X.X.zip"
+  echo "  ./deploy_mdftoparquet.sh --project my-project-123 --bucket canedge-test-bucket-gcp --id canedge-demo --email user@example.com"
 }
 
 # Default values
 AUTO_APPROVE="-auto-approve" # Auto-approve by default
 NOTIFICATION_EMAIL=""         # Email for notifications
-# No default for UNIQUE_ID, FUNCTION_ZIP, or FUNCTION_ZIP_BACKLOG - user must provide them
+# Default values for the ZIP files
+DEFAULT_FUNCTION_ZIP="mdf-to-parquet-google-function-v3.0.1.zip"  # Default MDF to Parquet function ZIP
+DEFAULT_FUNCTION_ZIP_BACKLOG="backlog-processor-google-v3.0.1.zip"  # Default backlog processor function ZIP
+FUNCTION_ZIP="$DEFAULT_FUNCTION_ZIP"  # Use default unless overridden
+FUNCTION_ZIP_BACKLOG="$DEFAULT_FUNCTION_ZIP_BACKLOG"  # Use default unless overridden
+# No default for UNIQUE_ID - user must provide it
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -163,19 +168,9 @@ if [ -z "$UNIQUE_ID" ]; then
   exit 1
 fi
 
-# Check if function ZIP is provided
-if [ -z "$FUNCTION_ZIP" ]; then
-  echo "Error: Function ZIP filename is required. Please specify with --zip flag."
-  show_help
-  exit 1
-fi
-
-# Check if backlog function ZIP is provided
-if [ -z "$FUNCTION_ZIP_BACKLOG" ]; then
-  echo "Error: Backlog function ZIP filename is required. Please specify with --zip-backlog flag."
-  show_help
-  exit 1
-fi
+# Display which ZIP files will be used
+echo "Using Cloud Function ZIP: ${FUNCTION_ZIP}"
+echo "Using Backlog Function ZIP: ${FUNCTION_ZIP_BACKLOG}"
 
 # Auto-detecting region from input bucket
 echo "Auto-detecting region from input bucket..."

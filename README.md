@@ -45,7 +45,7 @@ Replace:
 Once you have an input bucket set up, you can optionally deploy the processing pipeline to automatically DBC decode uploaded MF4 files to Parquet format:
 
 ```bash
-chmod +x deploy_mdftoparquet.sh && ./deploy_mdftoparquet.sh --project YOUR_PROJECT_ID --bucket YOUR_INPUT_BUCKET_NAME --id YOUR_UNIQUE_ID --email YOUR_EMAIL --zip YOUR_FUNCTION_ZIP --zip-backlog YOUR_BACKLOG_FUNCTION_ZIP
+chmod +x deploy_mdftoparquet.sh && ./deploy_mdftoparquet.sh --project YOUR_PROJECT_ID --bucket YOUR_INPUT_BUCKET_NAME --id YOUR_UNIQUE_ID --email YOUR_EMAIL
 ```
 
 Replace:
@@ -53,9 +53,11 @@ Replace:
 - `YOUR_INPUT_BUCKET_NAME` with your input bucket name
 - `YOUR_UNIQUE_ID` with a short unique identifier (e.g. `datalake1`)
 - `YOUR_EMAIL` with your email address to receive notifications
-- `YOUR_FUNCTION_ZIP` with the function ZIP file name (e.g. `mdf-to-parquet-google-function-v3.1.0.zip`)
-  - *Download the ZIP from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake/Google)*
-- `YOUR_BACKLOG_FUNCTION_ZIP` with the backlog function ZIP file name
+
+Optional parameters:
+- `--zip YOUR_FUNCTION_ZIP`: Override the default main function ZIP file (default: `mdf-to-parquet-google-function-v3.0.1.zip`) 
+- `--zip-backlog YOUR_BACKLOG_FUNCTION_ZIP`: Override the default backlog function ZIP file (default: `backlog-processor-google-v3.0.1.zip`)
+  - *Download the ZIP files from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake/Google)*
 
 
 > [!NOTE]  
@@ -71,16 +73,18 @@ Replace:
 After setting up the MF4-to-Parquet pipeline, you can deploy BigQuery to query your Parquet data lake:
 
 ```bash
-chmod +x deploy_bigquery.sh && ./deploy_bigquery.sh --project YOUR_PROJECT_ID --bucket YOUR_INPUT_BUCKET_NAME --id YOUR_UNIQUE_ID --dataset YOUR_DATASET_NAME --zip YOUR_FUNCTION_ZIP
+chmod +x deploy_bigquery.sh && ./deploy_bigquery.sh --project YOUR_PROJECT_ID --bucket YOUR_INPUT_BUCKET_NAME --id YOUR_UNIQUE_ID --dataset YOUR_DATASET_ID
 ```
 
 Replace:
 - `YOUR_PROJECT_ID` with your Google Cloud project ID
 - `YOUR_INPUT_BUCKET_NAME` with your input bucket name
-- `YOUR_UNIQUE_ID` with the same unique identifier used in the previous step (e.g. `datalake1`)
-- `YOUR_DATASET_NAME` with your desired BigQuery dataset name (e.g. `dataset1`)
-- `YOUR_FUNCTION_ZIP` with the BigQuery function ZIP file name (e.g. `bigquery-map-tables-vT.3.0.zip`)
-  - *Download the ZIP from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake - interfaces/Google)*
+- `YOUR_UNIQUE_ID` with a short unique identifier (e.g. `datalake1`)
+- `YOUR_DATASET_ID` with your BigQuery dataset ID (e.g. `canedge_data`)
+
+Optional parameters:
+- `--zip YOUR_FUNCTION_ZIP`: Override the default BigQuery function ZIP file (default: `bigquery-map-tables-vT.3.1.zip`)
+  - *Download the ZIP from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake/Google)*
 
 > [!NOTE]  
 > Make sure to upload the ZIP to your input bucket root before deployment 
