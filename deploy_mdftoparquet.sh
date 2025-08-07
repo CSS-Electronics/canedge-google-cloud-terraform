@@ -138,6 +138,8 @@ echo "- Enabling Cloud Build API..."
 gcloud services enable cloudbuild.googleapis.com --quiet
 echo "- Enabling Eventarc API..."
 gcloud services enable eventarc.googleapis.com --quiet
+echo "- Enabling Cloud Scheduler API..."
+gcloud services enable cloudscheduler.googleapis.com --quiet
 echo "✓ All required APIs have been enabled."
 
 # Ensure Eventarc service agent has proper permissions
