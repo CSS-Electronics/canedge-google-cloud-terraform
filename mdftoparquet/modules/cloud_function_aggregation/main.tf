@@ -16,7 +16,7 @@ resource "google_cloudfunctions2_function" "aggregation_function" {
   
   build_config {
     runtime     = "python311"
-    entry_point = "process_mdf_file"
+    entry_point = "http_aggregation"
     source {
       storage_source {
         bucket = var.input_bucket_name
