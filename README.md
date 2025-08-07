@@ -42,7 +42,7 @@ Replace:
 
 ### 2: Deploy MF4-to-Parquet Pipeline
 
-Once you have an input bucket set up, you can optionally deploy the processing pipeline to automatically DBC decode uploaded MF4 files to Parquet format. this also deploys resources for processing a backlog of MDF files as well as creating trip summaries in your Parquet data lake.
+Once you have an input bucket set up, you can optionally deploy the processing pipeline to automatically DBC decode uploaded MF4 files to Parquet format  and provide backlog/aggregation processing capabilities:
 
 ```bash
 chmod +x deploy_mdftoparquet.sh && ./deploy_mdftoparquet.sh --project YOUR_PROJECT_ID --bucket YOUR_INPUT_BUCKET_NAME --id YOUR_UNIQUE_ID --email YOUR_EMAIL
@@ -62,7 +62,7 @@ Optional parameters:
 
 
 > [!NOTE]  
-> Make sure to upload the ZIP to your input bucket root before deployment 
+> Make sure to upload all the ZIP files to your input bucket root before deployment 
 
 > [!IMPORTANT]  
 > If the deployment fails with a message regarding Eventarc propagation delay, simply re-run the deployment after a few minutes to complete it.
@@ -114,12 +114,16 @@ If you encounter issues with either deployment:
     - `iam/` - Module for setting up IAM permissions
     - `cloud_function/` - Module for deploying the main Cloud Function
     - `cloud_function_backlog/` - Module for deploying the Backlog Cloud Function
+    - `cloud_function_aggregation/` - Module for deploying the Aggregation Cloud Function
+    - `cloud_scheduler_backlog/` - Module for the Backlog Cloud Scheduler (paused, manual trigger)
+    - `cloud_scheduler_aggregation/` - Module for the Aggregation Cloud Scheduler
     - `monitoring/` - Module for setting up monitoring configurations
 - `bigquery/` - Terraform configuration for BigQuery deployment
   - `modules/` - Terraform modules specific to the BigQuery deployment
     - `dataset/` - Module for creating the BigQuery dataset
     - `service_accounts/` - Module for setting up service accounts
     - `cloud_function/` - Module for deploying the BigQuery mapping function
+    - `cloud_scheduler_map_tables/` - Module for the BigQuery Map Tables Cloud Scheduler (paused, manual trigger)
 - `bigquery-function/` - Source code for BigQuery table mapping function
 - `deploy_input_bucket.sh` - Script for input bucket deployment
 - `deploy_mdftoparquet.sh` - Script for MF4-to-Parquet pipeline deployment
