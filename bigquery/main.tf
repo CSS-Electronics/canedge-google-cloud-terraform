@@ -100,3 +100,14 @@ output "function_uri" {
   description = "URI to trigger the BigQuery table mapping function"
   value       = module.cloud_function.function_uri
 }
+
+# Cloud Scheduler outputs
+output "map_tables_scheduler_name" {
+  description = "Name of the Cloud Scheduler job for the BigQuery map tables function"
+  value       = module.cloud_scheduler_map_tables.scheduler_job_name
+}
+
+output "map_tables_scheduler_state" {
+  description = "Current state of the Cloud Scheduler job (ENABLED or PAUSED)"
+  value       = module.cloud_scheduler_map_tables.scheduler_state
+}
