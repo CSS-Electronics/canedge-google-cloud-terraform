@@ -42,7 +42,7 @@ Replace:
 
 ### 2: Deploy MF4-to-Parquet Pipeline
 
-Once you have an input bucket set up, you can optionally deploy the processing pipeline to automatically DBC decode uploaded MF4 files to Parquet format:
+Once you have an input bucket set up, you can optionally deploy the processing pipeline to automatically DBC decode uploaded MF4 files to Parquet format. this also deploys resources for processing a backlog of MDF files as well as creating trip summaries in your Parquet data lake.
 
 ```bash
 chmod +x deploy_mdftoparquet.sh && ./deploy_mdftoparquet.sh --project YOUR_PROJECT_ID --bucket YOUR_INPUT_BUCKET_NAME --id YOUR_UNIQUE_ID --email YOUR_EMAIL
@@ -58,7 +58,6 @@ Optional parameters:
 - `--zip YOUR_FUNCTION_ZIP`: Override the default main function ZIP file 
 - `--zip-backlog YOUR_BACKLOG_FUNCTION_ZIP`: Override the default backlog function ZIP 
 - `--zip-aggregation YOUR_AGGREGATION_FUNCTION_ZIP`: Override the default aggregation function ZIP 
-
   - *Download the ZIP files from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake/Google)*
 
 
