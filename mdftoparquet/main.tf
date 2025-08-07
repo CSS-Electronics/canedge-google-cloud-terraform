@@ -76,6 +76,23 @@ module "cloud_function_backlog" {
   ]
 }
 
+# Cloud Function for Parquet data lake aggregation
+module "cloud_function_backlog" {
+  source = "./modules/cloud_function_aggregation"
+
+  project              = var.project
+  region               = var.region
+  unique_id            = var.unique_id
+  input_bucket_name    = var.input_bucket_name
+  output_bucket_name   = module.output_bucket.output_bucket_name
+  service_account_email = module.iam.service_account_email
+  function_zip_backlog = var.function_zip_aggregation
+  
+  depends_on = [
+    module.iam
+  ]
+}
+
 # Monitoring module for logging metrics and alert policies
 module "monitoring" {
   source = "./modules/monitoring"

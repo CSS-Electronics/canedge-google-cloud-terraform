@@ -28,7 +28,7 @@ variable "service_account_email" {
   type        = string
 }
 
-variable "function_zip_backlog" {
-  description = "Filename of the Backlog Cloud Function ZIP file in the input bucket (e.g. backlog-processor-google-vX.X.X)"
+variable "function_zip_aggregation" {
+  description = "Filename of the Aggregation Cloud Function ZIP file in the input bucket (e.g. backlog-processor-google-vX.X.X)"
   type        = string
 }

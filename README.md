@@ -55,8 +55,10 @@ Replace:
 - `YOUR_EMAIL` with your email address to receive notifications
 
 Optional parameters:
-- `--zip YOUR_FUNCTION_ZIP`: Override the default main function ZIP file (default: `mdf-to-parquet-google-function-v3.0.1.zip`) 
-- `--zip-backlog YOUR_BACKLOG_FUNCTION_ZIP`: Override the default backlog function ZIP file (default: `backlog-processor-google-v3.0.1.zip`)
+- `--zip YOUR_FUNCTION_ZIP`: Override the default main function ZIP file 
+- `--zip-backlog YOUR_BACKLOG_FUNCTION_ZIP`: Override the default backlog function ZIP 
+- `--zip-aggregation YOUR_AGGREGATION_FUNCTION_ZIP`: Override the default aggregation function ZIP 
+
   - *Download the ZIP files from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake/Google)*
 
 
@@ -83,7 +85,7 @@ Replace:
 - `YOUR_DATASET_ID` with your BigQuery dataset ID (e.g. `canedge_data`)
 
 Optional parameters:
-- `--zip YOUR_FUNCTION_ZIP`: Override the default BigQuery function ZIP file (default: `bigquery-map-tables-vT.3.1.zip`)
+- `--zip YOUR_FUNCTION_ZIP`: Override the default BigQuery function ZIP file
   - *Download the ZIP from the [CANedge Intro](https://www.csselectronics.com/pages/can-bus-hardware-software-docs) (Process/MF4 decoders/Parquet data lake/Google)*
 
 > [!NOTE]  
