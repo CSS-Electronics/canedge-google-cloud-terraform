@@ -2,17 +2,28 @@
 * Module to deploy the Aggregation Cloud Function
 */
 
+# Force Terraform to check for changes in the ZIP file on every apply
+resource "null_resource" "function_zip_trigger" {
+  triggers = {
+    # This will change whenever terraform apply is run
+    file_hash = "${timestamp()}"
+  }
+}
+
 # This forces Terraform to check the hash of the ZIP file at every apply
 # and redeploy the function if the file has changed
 data "external" "function_zip_hash" {
   program = ["bash", "-c", "echo '{\"result\":\"'$(gsutil hash gs://${var.input_bucket_name}/${var.function_zip_aggregation} | grep md5 | awk '{print $3}')'\"}'"]
+  
+  # Force hash recalculation on every apply
+  depends_on = [null_resource.function_zip_trigger]
 }
 
 resource "google_cloudfunctions2_function" "aggregation_function" {
   name        = "${var.unique_id}-aggregation"
   project     = var.project
   location    = var.region
-  description = "CANedge data lake aggregation function - Hash: ${data.external.function_zip_hash.result.result}"
+  description = "CANedge data lake aggregation function - Hash: ${data.external.function_zip_hash.result.result} - Updated: ${timestamp()}"
   
   build_config {
     runtime     = "python311"
@@ -31,6 +42,7 @@ resource "google_cloudfunctions2_function" "aggregation_function" {
     max_instance_count     = 1  # Limit to one instance to avoid race conditions
     environment_variables  = {
       INPUT_BUCKET    = var.input_bucket_name
+      OUTPUT_BUCKET   = var.output_bucket_name
     }
     service_account_email  = var.service_account_email
   }
@@ -38,6 +50,9 @@ resource "google_cloudfunctions2_function" "aggregation_function" {
   labels = {
     goog-terraform-provisioned = "true"
   }
+  
+  # Explicit dependency on the hash calculation
+  depends_on = [data.external.function_zip_hash]
 }
 
 # IAM binding for Cloud Functions v2 using the gcloud-based approach

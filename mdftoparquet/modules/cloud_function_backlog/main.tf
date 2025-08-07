@@ -2,17 +2,28 @@
 * Module to deploy the Backlog Cloud Function for MDF4-to-Parquet conversion
 */
 
+# Force Terraform to check for changes in the ZIP file on every apply
+resource "null_resource" "function_zip_trigger" {
+  triggers = {
+    # This will change whenever terraform apply is run
+    file_hash = "${timestamp()}"
+  }
+}
+
 # This forces Terraform to check the hash of the ZIP file at every apply
 # and redeploy the function if the file has changed
 data "external" "function_zip_hash" {
   program = ["bash", "-c", "echo '{\"result\":\"'$(gsutil hash gs://${var.input_bucket_name}/${var.function_zip_backlog} | grep md5 | awk '{print $3}')'\"}'"]
+  
+  # Force hash recalculation on every apply
+  depends_on = [null_resource.function_zip_trigger]
 }
 
 resource "google_cloudfunctions2_function" "mdf_to_parquet_backlog_function" {
   name        = "${var.unique_id}-mdf-to-parquet-backlog"
   project     = var.project
   location    = var.region
-  description = "CANedge MDF4 to Parquet backlog converter function - Hash: ${data.external.function_zip_hash.result.result}"
+  description = "CANedge MDF4 to Parquet backlog converter function - Hash: ${data.external.function_zip_hash.result.result} - Updated: ${timestamp()}"
   
   build_config {
     runtime     = "python311"
@@ -41,6 +52,9 @@ resource "google_cloudfunctions2_function" "mdf_to_parquet_backlog_function" {
   labels = {
     goog-terraform-provisioned = "true"
   }
+  
+  # Explicit dependency on the hash calculation
+  depends_on = [data.external.function_zip_hash]
 }
 
 # IAM binding for Cloud Functions v2 using the gcloud-based approach

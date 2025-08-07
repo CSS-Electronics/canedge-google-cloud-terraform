@@ -43,3 +43,14 @@ variable "function_zip_aggregation" {
   type        = string
 }
 
+variable "scheduler_cron" {
+  description = "Cron schedule expression for the Aggregation Cloud Function scheduler job"
+  type        = string
+  default     = "0 0 * * *"  # Default to midnight every day
+}
+
+variable "scheduler_timezone" {
+  description = "Time zone for the scheduler job"
+  type        = string
+  default     = "Etc/UTC"
+}

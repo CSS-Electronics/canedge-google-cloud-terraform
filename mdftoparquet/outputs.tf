@@ -43,3 +43,13 @@ output "alert_policy_id" {
   description = "ID of the alert policy for 'NEW EVENT' notifications"
   value       = module.monitoring.alert_policy_id
 }
+
+output "aggregation_scheduler_name" {
+  description = "Name of the Cloud Scheduler job for the Aggregation Cloud Function"
+  value       = module.cloud_scheduler.scheduler_job_name
+}
+
+output "aggregation_scheduler_state" {
+  description = "Current state of the Cloud Scheduler job (ENABLED or PAUSED)"
+  value       = module.cloud_scheduler.scheduler_state
+}
