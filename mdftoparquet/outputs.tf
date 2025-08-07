@@ -17,6 +17,11 @@ output "cloud_function_backlog_name" {
   value       = module.cloud_function_backlog.function_name
 }
 
+output "cloud_function_aggregation_name" {
+  description = "Name of the deployed Aggregation Cloud Function"
+  value       = module.cloud_function_aggregation.function_name
+}
+
 output "service_account_email" {
   description = "Service account email used by the Cloud Function"
   value       = module.iam.service_account_email

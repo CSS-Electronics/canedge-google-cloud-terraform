@@ -77,7 +77,7 @@ module "cloud_function_backlog" {
 }
 
 # Cloud Function for Parquet data lake aggregation
-module "cloud_function_backlog" {
+module "cloud_function_aggregation" {
   source = "./modules/cloud_function_aggregation"
 
   project              = var.project
