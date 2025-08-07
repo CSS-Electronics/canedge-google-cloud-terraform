@@ -1,13 +1,13 @@
 /**
-* Module to deploy Google Cloud Scheduler for the Aggregation Cloud Function
+* Module to deploy Google Cloud Scheduler for the BigQuery Map Tables Cloud Function
 * This creates a scheduler job that is deployed in a paused state
 */
 
-resource "google_cloud_scheduler_job" "aggregation_scheduler" {
-  name             = "${var.unique_id}-aggregation-scheduler"
+resource "google_cloud_scheduler_job" "map_tables_scheduler" {
+  name             = "${var.unique_id}-map-tables-scheduler"
   project          = var.project
   region           = var.region
-  description      = "Trigger for CANedge data lake aggregation function (daily schedule if enabled)"
+  description      = "Trigger for CANedge BigQuery table mapping function (daily schedule if enabled)"
   schedule         = var.schedule
   time_zone        = var.time_zone
   attempt_deadline = "1800s"  # 30 minutes
@@ -17,12 +17,12 @@ resource "google_cloud_scheduler_job" "aggregation_scheduler" {
   
   http_target {
     http_method = "POST"
-    uri         = "https://${var.region}-${var.project}.cloudfunctions.net/${var.unique_id}-aggregation"
+    uri         = "https://${var.region}-${var.project}.cloudfunctions.net/${var.unique_id}-bg-map-tables"
     
     # Use OIDC token for Cloud Function authorization
     oidc_token {
       service_account_email = var.service_account_email
-      audience              = "https://${var.region}-${var.project}.cloudfunctions.net/${var.unique_id}-aggregation"
+      audience              = "https://${var.region}-${var.project}.cloudfunctions.net/${var.unique_id}-bg-map-tables"
     }
   }
   

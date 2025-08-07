@@ -7,9 +7,9 @@ resource "google_cloud_scheduler_job" "backlog_scheduler" {
   name             = "${var.unique_id}-mdf-to-parquet-backlog-scheduler"
   project          = var.project
   region           = var.region
-  description      = "Manual trigger for CANedge data lake backlog function"
-  # Normal daily schedule at midnight but paused by default
-  schedule         = var.schedule
+  description      = "Trigger backlog processing"
+  # Run once per year on January 1st at midnight
+  schedule         = "0 0 1 1 *"
   time_zone        = var.time_zone
   attempt_deadline = "1800s"  # 30 minutes
   

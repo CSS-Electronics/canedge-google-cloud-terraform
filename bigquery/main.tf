@@ -51,6 +51,24 @@ module "cloud_function" {
   ]
 }
 
+
+# Cloud Scheduler for daily triggering of the Aggregation function
+module "cloud_scheduler_map_tables" {
+  source = "./modules/cloud_scheduler_map_tables"
+
+  project              = var.project
+  region               = var.region
+  unique_id            = var.unique_id
+  service_account_email = module.iam.service_account_email
+  cloud_function_id    = module.cloud_function.function_id
+  schedule             = var.scheduler_cron
+  time_zone            = var.scheduler_timezone
+  
+  depends_on = [
+    module.cloud_function
+  ]
+}
+
 # Output variables for use in scripts and documentation
 output "project_id" {
   value = var.project
