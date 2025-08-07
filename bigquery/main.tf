@@ -52,17 +52,17 @@ module "cloud_function" {
 }
 
 
-# Cloud Scheduler for daily triggering of the Aggregation function
+# Cloud Scheduler for daily triggering of the BigQuery Map Tables function
 module "cloud_scheduler_map_tables" {
   source = "./modules/cloud_scheduler_map_tables"
 
   project              = var.project
   region               = var.region
   unique_id            = var.unique_id
-  service_account_email = module.iam.service_account_email
+  service_account_email = module.service_accounts.bigquery_admin_service_account_email
   cloud_function_id    = module.cloud_function.function_id
-  schedule             = var.scheduler_cron
-  time_zone            = var.scheduler_timezone
+  schedule             = "0 0 * * *"  # Daily at midnight
+  time_zone            = "Etc/UTC"
   
   depends_on = [
     module.cloud_function

@@ -17,12 +17,12 @@ resource "google_cloud_scheduler_job" "map_tables_scheduler" {
   
   http_target {
     http_method = "POST"
-    uri         = "https://${var.region}-${var.project}.cloudfunctions.net/${var.unique_id}-bg-map-tables"
+    uri         = "https://${var.region}-${var.project}.cloudfunctions.net/${var.unique_id}-bq-map-tables"
     
     # Use OIDC token for Cloud Function authorization
     oidc_token {
       service_account_email = var.service_account_email
-      audience              = "https://${var.region}-${var.project}.cloudfunctions.net/${var.unique_id}-bg-map-tables"
+      audience              = "https://${var.region}-${var.project}.cloudfunctions.net/${var.unique_id}-bq-map-tables"
     }
   }
   
