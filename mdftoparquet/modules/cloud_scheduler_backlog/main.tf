@@ -1,6 +1,6 @@
 /**
 * Module to deploy Google Cloud Scheduler for the backlog Cloud Function
-* This creates a scheduler job that is enabled for manual triggering only
+* This creates a scheduler job that is paused by default for manual triggering only
 */
 
 resource "google_cloud_scheduler_job" "backlog_scheduler" {
@@ -8,13 +8,13 @@ resource "google_cloud_scheduler_job" "backlog_scheduler" {
   project          = var.project
   region           = var.region
   description      = "Manual trigger for CANedge data lake backlog function"
-  # Use a schedule that will never naturally occur (Feb 31, which doesn't exist)
-  schedule         = "0 0 31 2 *"
+  # Normal daily schedule at midnight but paused by default
+  schedule         = var.schedule
   time_zone        = var.time_zone
   attempt_deadline = "1800s"  # 30 minutes
   
-  # Set to ENABLED so it can be manually triggered
-  paused           = false
+  # Set to PAUSED by default, can be manually enabled or triggered
+  paused           = true
   
   http_target {
     http_method = "POST"
