@@ -31,6 +31,7 @@ show_help() {
   echo "  -e, --email EMAIL           Email address to receive notifications"
   echo "  -z, --zip FUNCTION_ZIP      Cloud Function ZIP filename (default: $DEFAULT_FUNCTION_ZIP)"
   echo "  -zb, --zip-backlog ZIP_BACKLOG  Backlog Cloud Function ZIP filename (default: $DEFAULT_FUNCTION_ZIP_BACKLOG)"
+  echo "  -za, --zip-aggregation ZIP_AGGREGATION  Aggregation Cloud Function ZIP filename (default: $DEFAULT_FUNCTION_ZIP_AGGREGATION)"
   echo "  -y, --auto-approve          Skip approval prompt"
   echo "  -h, --help                  Show this help message"
   echo
@@ -42,10 +43,13 @@ show_help() {
 AUTO_APPROVE="-auto-approve" # Auto-approve by default
 NOTIFICATION_EMAIL=""         # Email for notifications
 # Default values for the ZIP files
-DEFAULT_FUNCTION_ZIP="mdf-to-parquet-google-function-v3.0.1.zip"  # Default MDF to Parquet function ZIP
-DEFAULT_FUNCTION_ZIP_BACKLOG="backlog-processor-google-v3.0.1.zip"  # Default backlog processor function ZIP
+DEFAULT_FUNCTION_ZIP="mdf-to-parquet-google-function-v4.0.0.zip"  # Default MDF to Parquet function ZIP
+DEFAULT_FUNCTION_ZIP_BACKLOG="backlog-processor-google-v4.0.0.zip"  # Default backlog processor function ZIP
+DEFAULT_FUNCTION_ZIP_AGGREGATION="aggregation-processor-google-v4.0.0.zip"  # Default backlog processor function ZIP
 FUNCTION_ZIP="$DEFAULT_FUNCTION_ZIP"  # Use default unless overridden
 FUNCTION_ZIP_BACKLOG="$DEFAULT_FUNCTION_ZIP_BACKLOG"  # Use default unless overridden
+FUNCTION_ZIP_AGGREGATION="$DEFAULT_FUNCTION_ZIP_AGGREGATION"  # Use default unless overridden
+
 # No default for UNIQUE_ID - user must provide it
 
 # Parse command line arguments
@@ -77,6 +81,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -zb|--zip-backlog)
       FUNCTION_ZIP_BACKLOG="$2"
+      shift 2
+      ;;
+    -za|--zip-aggregation)
+      FUNCTION_ZIP_AGGREGATION="$2"
       shift 2
       ;;
     -y|--auto-approve)
@@ -130,6 +138,8 @@ echo "- Enabling Cloud Build API..."
 gcloud services enable cloudbuild.googleapis.com --quiet
 echo "- Enabling Eventarc API..."
 gcloud services enable eventarc.googleapis.com --quiet
+echo "- Enabling Cloud Scheduler API..."
+gcloud services enable cloudscheduler.googleapis.com --quiet
 echo "✓ All required APIs have been enabled."
 
 # Ensure Eventarc service agent has proper permissions
@@ -171,6 +181,7 @@ fi
 # Display which ZIP files will be used
 echo "Using Cloud Function ZIP: ${FUNCTION_ZIP}"
 echo "Using Backlog Function ZIP: ${FUNCTION_ZIP_BACKLOG}"
+echo "Using Aggregation Function ZIP: ${FUNCTION_ZIP_AGGREGATION}"
 
 # Auto-detecting region from input bucket
 echo "Auto-detecting region from input bucket..."
@@ -289,6 +300,28 @@ else
   fi
 fi
 
+
+# Check if the aggregation ZIP file exists in the bucket
+echo "Checking if Aggregation Cloud Function ZIP file exists in bucket..."
+gsutil stat "gs://${BUCKET_NAME}/${FUNCTION_ZIP_AGGREGATION}" 2>&1
+AGGREGATION_ZIP_CHECK=$?
+if [ $AGGREGATION_ZIP_CHECK -eq 0 ]; then
+  echo "✓ Found Aggregation Cloud Function ZIP file '${FUNCTION_ZIP_AGGREGATION}' in bucket"
+else
+  echo "⚠️ Warning: Aggregation Cloud Function ZIP file '${FUNCTION_ZIP_AGGREGATION}' not found in bucket '${BUCKET_NAME}'."
+  if [[ "$AUTO_APPROVE" == "-auto-approve" ]]; then
+    echo "   Auto-approve enabled, continuing anyway..."
+  else
+    echo "   You may need to upload it manually before the function will work correctly."
+    echo "   Continue anyway? (y/n)"
+    read -r response
+    if [[ "$response" != "y" && "$response" != "Y" ]]; then
+      echo "Deployment cancelled."
+      exit 1
+    fi
+  fi
+fi
+
 # Import existing resources if they exist
 if [ "$BUCKET_EXISTS" = true ]; then
   echo "Importing existing output bucket into Terraform state..."
@@ -342,6 +375,7 @@ if [ "$FUNCTION_EXISTS" = true ]; then
     -var="notification_email=${NOTIFICATION_EMAIL}" \
     -var="function_zip=${FUNCTION_ZIP}" \
     -var="function_zip_backlog=${FUNCTION_ZIP_BACKLOG}" \
+    -var="function_zip_aggregation=${FUNCTION_ZIP_AGGREGATION}" \
     -out=tfplan
   
   # Apply the plan without asking for confirmation
@@ -360,7 +394,8 @@ else
     -var="unique_id=${UNIQUE_ID}" \
     -var="notification_email=${NOTIFICATION_EMAIL}" \
     -var="function_zip=${FUNCTION_ZIP}" \
-    -var="function_zip_backlog=${FUNCTION_ZIP_BACKLOG}"
+    -var="function_zip_backlog=${FUNCTION_ZIP_BACKLOG}" \
+    -var="function_zip_aggregation=${FUNCTION_ZIP_AGGREGATION}"
 fi
 
 # Check if the deployment was successful

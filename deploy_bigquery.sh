@@ -289,16 +289,19 @@ if [ $DEPLOY_STATUS -eq 0 ]; then
   echo "  - gs://${BUCKET_NAME}/${ADMIN_KEY_FILE}"
   echo "  - gs://${BUCKET_NAME}/${USER_KEY_FILE}"
   echo 
-  echo "To map your Parquet data to BigQuery tables:"
-  echo "1. Open the Cloud Function in your browser:"
-  echo "   https://console.cloud.google.com/functions/details/${REGION}/${UNIQUE_ID}-bq-map-tables?project=${PROJECT_ID}"
-  echo "2. Click the 'Test' button at the top of the page"
-  echo "3. Copy the default 'CLI test command'"
-  echo "4. Click 'Test in Cloud Shell' button"
-  echo "5. Paste the command into Cloud Shell and press Enter"
-  echo "6. View detailed execution logs in the 'Logs' tab of the function"
+  # Get the scheduler name from terraform output
+  SCHEDULER_NAME=$(terraform output -raw map_tables_scheduler_name 2>/dev/null)
+  
+  echo "To map your Parquet data to BigQuery tables, use Cloud Scheduler:"
+  echo "1. Open the Cloud Scheduler in your browser: https://console.cloud.google.com/cloudscheduler"
+  echo "2. Select the map-tables-scheduler, click 'RESUME' and 'FORCE RUN'"
+  echo "3. After it completes, click 'PAUSE'"
+  echo "3. View logs in the Cloud Function Logs tab: https://console.cloud.google.com/run"
   echo
   echo "The function will delete all existing tables in the dataset and create new ones"
   echo "by scanning the output bucket for Parquet files based on the device/message structure."
+  echo
+  echo "Note: The scheduler is initially deployed in a paused state, so it won't run"
+  echo "automatically until you explicitly resume it."
   echo
 fi

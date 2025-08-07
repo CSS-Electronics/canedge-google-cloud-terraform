@@ -51,6 +51,24 @@ module "cloud_function" {
   ]
 }
 
+
+# Cloud Scheduler for daily triggering of the BigQuery Map Tables function
+module "cloud_scheduler_map_tables" {
+  source = "./modules/cloud_scheduler_map_tables"
+
+  project              = var.project
+  region               = var.region
+  unique_id            = var.unique_id
+  service_account_email = module.service_accounts.bigquery_admin_service_account_email
+  cloud_function_id    = module.cloud_function.function_id
+  schedule             = "0 0 * * *"  # Daily at midnight
+  time_zone            = "Etc/UTC"
+  
+  depends_on = [
+    module.cloud_function
+  ]
+}
+
 # Output variables for use in scripts and documentation
 output "project_id" {
   value = var.project
@@ -81,4 +99,15 @@ output "bigquery_user_key" {
 output "function_uri" {
   description = "URI to trigger the BigQuery table mapping function"
   value       = module.cloud_function.function_uri
+}
+
+# Cloud Scheduler outputs
+output "map_tables_scheduler_name" {
+  description = "Name of the Cloud Scheduler job for the BigQuery map tables function"
+  value       = module.cloud_scheduler_map_tables.scheduler_job_name
+}
+
+output "map_tables_scheduler_state" {
+  description = "Current state of the Cloud Scheduler job (ENABLED or PAUSED)"
+  value       = module.cloud_scheduler_map_tables.scheduler_state
 }

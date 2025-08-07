@@ -34,6 +34,23 @@ variable "function_zip" {
 }
 
 variable "function_zip_backlog" {
-  description = "Filename of the Backlog Cloud Function ZIP file in the input bucket (e.g. mdf-to-parquet-backlog-function-vX.X.X.zip)"
+  description = "Filename of the Backlog Cloud Function ZIP file in the input bucket (e.g. backlog-processor-google-vX.X.X.zip)"
   type        = string
+}
+
+variable "function_zip_aggregation" {
+  description = "Filename of the Aggregation Cloud Function ZIP file in the input bucket (e.g. aggregation-processor-google-vX.X.X.zip)"
+  type        = string
+}
+
+variable "scheduler_cron" {
+  description = "Cron schedule expression for the Aggregation Cloud Function scheduler job"
+  type        = string
+  default     = "0 0 * * *"  # Default to midnight every day
+}
+
+variable "scheduler_timezone" {
+  description = "Time zone for the scheduler job"
+  type        = string
+  default     = "Etc/UTC"
 }

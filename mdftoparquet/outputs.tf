@@ -17,6 +17,11 @@ output "cloud_function_backlog_name" {
   value       = module.cloud_function_backlog.function_name
 }
 
+output "cloud_function_aggregation_name" {
+  description = "Name of the deployed Aggregation Cloud Function"
+  value       = module.cloud_function_aggregation.function_name
+}
+
 output "service_account_email" {
   description = "Service account email used by the Cloud Function"
   value       = module.iam.service_account_email
@@ -38,3 +43,26 @@ output "alert_policy_id" {
   description = "ID of the alert policy for 'NEW EVENT' notifications"
   value       = module.monitoring.alert_policy_id
 }
+
+
+output "backlog_scheduler_name" {
+  description = "Name of the Cloud Scheduler job for the Backlog Cloud Function"
+  value       = module.cloud_scheduler_backlog.scheduler_job_name
+}
+
+output "backlog_scheduler_state" {
+  description = "Current state of the Cloud Scheduler job (ENABLED or PAUSED)"
+  value       = module.cloud_scheduler_backlog.scheduler_state
+}
+
+
+output "aggregation_scheduler_name" {
+  description = "Name of the Cloud Scheduler job for the Aggregation Cloud Function"
+  value       = module.cloud_scheduler_aggregation.scheduler_job_name
+}
+
+output "aggregation_scheduler_state" {
+  description = "Current state of the Cloud Scheduler job (ENABLED or PAUSED)"
+  value       = module.cloud_scheduler_aggregation.scheduler_state
+}
+
