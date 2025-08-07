@@ -9,5 +9,5 @@ output "function_uri" {
 
 output "function_id" {
   description = "ID of the deployed Cloud Function"
-  value       = google_cloudfunctions2_function.function.id
+  value       = google_cloudfunctions2_function.bigquery_map_tables_function.id
 }
