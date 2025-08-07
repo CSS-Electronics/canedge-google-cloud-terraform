@@ -293,13 +293,10 @@ if [ $DEPLOY_STATUS -eq 0 ]; then
   SCHEDULER_NAME=$(terraform output -raw map_tables_scheduler_name 2>/dev/null)
   
   echo "To map your Parquet data to BigQuery tables, use Cloud Scheduler:"
-  echo "1. Open the Cloud Scheduler in your browser:"
-  echo "   https://console.cloud.google.com/cloudscheduler/jobs/details/${REGION}/${SCHEDULER_NAME}?project=${PROJECT_ID}"
-  echo "2. Follow these steps to manually trigger the function:"
-  echo "   a. If needed, click 'RESUME' to enable the scheduler temporarily"
-  echo "   b. Click 'FORCE RUN' to execute the function immediately"
-  echo "   c. After it completes, click 'PAUSE' to disable automatic scheduling"
-  echo "3. View execution logs in the Cloud Function/logs"
+  echo "1. Open the Cloud Scheduler in your browser: https://console.cloud.google.com/cloudscheduler"
+  echo "2. Select the map-tables-scheduler, click 'RESUME' and 'FORCE RUN'"
+  echo "3. After it completes, click 'PAUSE'"
+  echo "3. View logs in the Cloud Function Logs tab: https://console.cloud.google.com/run"
   echo
   echo "The function will delete all existing tables in the dataset and create new ones"
   echo "by scanning the output bucket for Parquet files based on the device/message structure."
