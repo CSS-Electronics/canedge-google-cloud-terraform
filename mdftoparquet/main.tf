@@ -86,7 +86,7 @@ module "cloud_function_aggregation" {
   input_bucket_name    = var.input_bucket_name
   output_bucket_name   = module.output_bucket.output_bucket_name
   service_account_email = module.iam.service_account_email
-  function_zip_backlog = var.function_zip_aggregation
+  function_zip_aggregation = var.function_zip_aggregation
   
   depends_on = [
     module.iam
