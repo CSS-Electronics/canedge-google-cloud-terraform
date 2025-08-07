@@ -44,12 +44,25 @@ output "alert_policy_id" {
   value       = module.monitoring.alert_policy_id
 }
 
+
+output "backlog_scheduler_name" {
+  description = "Name of the Cloud Scheduler job for the Backlog Cloud Function"
+  value       = module.cloud_scheduler_backlog.scheduler_job_name
+}
+
+output "backlog_scheduler_state" {
+  description = "Current state of the Cloud Scheduler job (ENABLED or PAUSED)"
+  value       = module.cloud_scheduler_backlog.scheduler_state
+}
+
+
 output "aggregation_scheduler_name" {
   description = "Name of the Cloud Scheduler job for the Aggregation Cloud Function"
-  value       = module.cloud_scheduler.scheduler_job_name
+  value       = module.cloud_scheduler_aggregation.scheduler_job_name
 }
 
 output "aggregation_scheduler_state" {
   description = "Current state of the Cloud Scheduler job (ENABLED or PAUSED)"
-  value       = module.cloud_scheduler.scheduler_state
+  value       = module.cloud_scheduler_aggregation.scheduler_state
 }
+

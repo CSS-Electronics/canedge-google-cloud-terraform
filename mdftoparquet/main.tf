@@ -93,9 +93,28 @@ module "cloud_function_aggregation" {
   ]
 }
 
+
+# Cloud Scheduler for daily triggering of the Backlog function
+module "cloud_scheduler_backlog" {
+  source = "./modules/cloud_scheduler_backlog"
+
+  project              = var.project
+  region               = var.region
+  unique_id            = var.unique_id
+  service_account_email = module.iam.service_account_email
+  cloud_function_id    = module.cloud_function_backlog.backlog_function_id
+  schedule             = var.scheduler_cron
+  time_zone            = var.scheduler_timezone
+  
+  depends_on = [
+    module.cloud_function_backlog
+  ]
+}
+
+
 # Cloud Scheduler for daily triggering of the Aggregation function
-module "cloud_scheduler" {
-  source = "./modules/cloud_scheduler"
+module "cloud_scheduler_aggregation" {
+  source = "./modules/cloud_scheduler_aggregation"
 
   project              = var.project
   region               = var.region
