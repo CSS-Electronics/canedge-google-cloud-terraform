@@ -79,14 +79,21 @@ def map_bigquery_tables(request):
     # Crawl the bucket to get all unique combinations of device_id and message
     prefixes = set()
     devices = set()
+    agg_prefixes = set()  # For storing aggregations subfolders
     blobs = output_bucket.list_blobs()
     for blob in blobs:
         parts = blob.name.split('/')
         if len(parts) >= 3:
             top_prefix, message = parts[:2]
+            
+            # Handle device IDs
             if re.match(r"^[0-9A-F]{8}$", top_prefix):  # Ensure only valid device IDs
                 prefixes.add(f"{top_prefix}/{message}")
                 devices.add(top_prefix)
+            
+            # Handle aggregations folder
+            elif top_prefix == "aggregations" and message != "devicemeta":  # devicemeta is handled separately
+                agg_prefixes.add(f"{top_prefix}/{message}")
 
     # Ensure meta Parquet files are always created before table mappings
     metadata_list = []
@@ -203,7 +210,33 @@ def map_bigquery_tables(request):
         except Conflict:
             print(f"- Table {table_id} already exists")
 
-    print("\nFinished creating external tables for all device and message combinations, including messages and devicemeta tables.")
+    # Process each unique aggregation/subfolder combination
+    for agg_prefix in agg_prefixes:
+        _, subfolder = agg_prefix.split('/')
+        table_id = f"{project_id}.{dataset_id}.tbl_{agg_prefix.replace('/', '_')}"
+        
+        # Define source URI
+        source_uris = [f"gs://{bucket_output_name}/{agg_prefix}/*"]
+        
+        # Create external table in BigQuery
+        external_config = bigquery.ExternalConfig('PARQUET')
+        external_config.source_uris = source_uris
+        external_config.autodetect = True
+        external_config.ignore_unknown_values = True
+        
+        table = bigquery.Table(table_id)
+        table.external_data_configuration = external_config
+        
+        try:
+            client.create_table(table)
+            print(f"- Created aggregation table {table_id}")
+            results['created'].append({
+                'table_id': table_id
+            })
+        except Conflict:
+            print(f"- Aggregation table {table_id} already exists")
+    
+    print("\nFinished creating external tables for all device/message combinations and aggregation subfolders, including messages and devicemeta tables.")
     
     
     # Return the response for API consumers
