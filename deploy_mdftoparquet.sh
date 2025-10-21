@@ -43,9 +43,9 @@ show_help() {
 AUTO_APPROVE="-auto-approve" # Auto-approve by default
 NOTIFICATION_EMAIL=""         # Email for notifications
 # Default values for the ZIP files
-DEFAULT_FUNCTION_ZIP="mdf-to-parquet-google-function-v4.0.3.zip"  # Default MDF to Parquet function ZIP
-DEFAULT_FUNCTION_ZIP_BACKLOG="backlog-processor-google-v4.0.3.zip"  # Default backlog processor function ZIP
-DEFAULT_FUNCTION_ZIP_AGGREGATION="aggregation-processor-google-v4.0.3.zip"  # Default backlog processor function ZIP
+DEFAULT_FUNCTION_ZIP="mdf-to-parquet-google-function-v4.0.4.zip"  # Default MDF to Parquet function ZIP
+DEFAULT_FUNCTION_ZIP_BACKLOG="backlog-processor-google-v4.0.4.zip"  # Default backlog processor function ZIP
+DEFAULT_FUNCTION_ZIP_AGGREGATION="aggregation-processor-google-v4.0.4.zip"  # Default backlog processor function ZIP
 FUNCTION_ZIP="$DEFAULT_FUNCTION_ZIP"  # Use default unless overridden
 FUNCTION_ZIP_BACKLOG="$DEFAULT_FUNCTION_ZIP_BACKLOG"  # Use default unless overridden
 FUNCTION_ZIP_AGGREGATION="$DEFAULT_FUNCTION_ZIP_AGGREGATION"  # Use default unless overridden
