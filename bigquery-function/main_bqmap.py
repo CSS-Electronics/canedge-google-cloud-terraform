@@ -4,6 +4,7 @@ import re
 import json
 import logging
 import tempfile
+from datetime import datetime
 from google.cloud import storage, bigquery
 from google.cloud.exceptions import Conflict
 import pyarrow as pa
@@ -52,6 +53,10 @@ def map_bigquery_tables(request):
         'created': [],
         'failed': []
     }
+    
+    # Track failed Parquet files for error reporting
+    failed_parquet_files = []
+    execution_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     
     # Get project ID from the BigQuery client (for table naming)
     project_id = client.project
@@ -189,6 +194,23 @@ def map_bigquery_tables(request):
         device_id, message = prefix.split('/')
         table_id = f"{project_id}.{dataset_id}.tbl_{device_id}_{message}"
         
+        # Find and validate first Parquet file in prefix
+        sample_blobs = list(output_bucket.list_blobs(prefix=prefix, max_results=5))
+        sample_parquet = next((b for b in sample_blobs if b.name.endswith('.parquet')), None)
+        
+        if sample_parquet:
+            try:
+                # Validate Parquet file using pyarrow
+                with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
+                    sample_parquet.download_to_filename(temp_file.name)
+                    _ = pq.read_table(temp_file.name)
+            except Exception as e:
+                sample_path = f"gs://{bucket_output_name}/{sample_parquet.name}"
+                print(f"ERROR: Failed to validate Parquet file: {sample_path}")
+                print(f"  Exception: {e}")
+                failed_parquet_files.append(sample_path)
+                continue
+        
         # Define source URI
         source_uris = [f"gs://{bucket_output_name}/{prefix}/*"]
         
@@ -215,6 +237,23 @@ def map_bigquery_tables(request):
         _, subfolder = agg_prefix.split('/')
         table_id = f"{project_id}.{dataset_id}.tbl_{agg_prefix.replace('/', '_')}"
         
+        # Find and validate first Parquet file in prefix
+        sample_blobs = list(output_bucket.list_blobs(prefix=agg_prefix, max_results=5))
+        sample_parquet = next((b for b in sample_blobs if b.name.endswith('.parquet')), None)
+        
+        if sample_parquet:
+            try:
+                # Validate Parquet file using pyarrow
+                with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
+                    sample_parquet.download_to_filename(temp_file.name)
+                    _ = pq.read_table(temp_file.name)
+            except Exception as e:
+                sample_path = f"gs://{bucket_output_name}/{sample_parquet.name}"
+                print(f"ERROR: Failed to validate Parquet file: {sample_path}")
+                print(f"  Exception: {e}")
+                failed_parquet_files.append(sample_path)
+                continue
+        
         # Define source URI
         source_uris = [f"gs://{bucket_output_name}/{agg_prefix}/*"]
         
@@ -238,6 +277,29 @@ def map_bigquery_tables(request):
     
     print("\nFinished creating external tables for all device/message combinations and aggregation subfolders, including messages and devicemeta tables.")
     
+    # Write error report to GCS if there were any failed Parquet files
+    if failed_parquet_files:
+        error_report = f"""Script execution time: {execution_time}
+
+The following Parquet files were invalid, resulting in the corresponding tables not being created:
+"""
+        for failed_file in failed_parquet_files:
+            error_report += f"- {failed_file}\n"
+        
+        error_report += """
+Typical root causes include below:
+
+1) The affected message has a variable length throughout the underlying MDF, resulting in an inconsistent column structure in the decoded Parquet file
+2) The DBC has a syntax error for the specific message
+3) The MF4 decoder may be outdated or have an unknown error
+
+To help troubleshoot this, you can create a local replication example (incl. the raw MDF/DBC files and the invalid Parquet) and send it to CSS Electronics.
+"""
+        
+        error_blob = output_bucket.blob("bigquery-mapping-errors.txt")
+        error_blob.upload_from_string(error_report)
+        print(f"\nError report written to gs://{bucket_output_name}/bigquery-mapping-errors.txt")
+        print(f"Total failed Parquet files: {len(failed_parquet_files)}")
     
     # Return the response for API consumers
     return {
@@ -245,5 +307,3 @@ def map_bigquery_tables(request):
         'message': 'BigQuery tables mapped successfully',
         'results': results
     }
-
-

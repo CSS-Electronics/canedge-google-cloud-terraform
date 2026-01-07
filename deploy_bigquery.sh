@@ -41,7 +41,7 @@ show_help() {
 # Default values
 AUTO_APPROVE="-auto-approve" # Auto-approve by default
 # Default ZIP file for BigQuery function
-DEFAULT_ZIP_FILE="bigquery-map-tables-vT.3.2.zip"  # Default BigQuery table mapping function ZIP
+DEFAULT_ZIP_FILE="bigquery-map-tables-vT.5.0.zip"  # Default BigQuery table mapping function ZIP
 ZIP_FILE="$DEFAULT_ZIP_FILE"  # Use default unless overridden
 
 # Parse command line arguments
