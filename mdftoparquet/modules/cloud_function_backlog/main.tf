@@ -37,7 +37,8 @@ resource "google_cloudfunctions2_function" "mdf_to_parquet_backlog_function" {
   }
 
   service_config {
-    available_memory       = "1Gi"
+    available_memory       = "4Gi"
+    available_cpu          = "2"
     timeout_seconds        = 3600
     max_instance_count     = 1  # Limit to one instance to avoid race conditions
     environment_variables  = {

@@ -11,7 +11,7 @@ resource "google_cloud_scheduler_job" "backlog_scheduler" {
   # Run once per year on January 1st at midnight
   schedule         = "0 0 1 1 *"
   time_zone        = var.time_zone
-  attempt_deadline = "1800s"  # 30 minutes
+  attempt_deadline = "3600s"  # Match function timeout (1 hour)
   
   # Set to PAUSED by default, can be manually enabled or triggered
   paused           = true
