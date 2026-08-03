@@ -72,6 +72,23 @@ if [ -z "$BUCKET_NAME" ]; then
   exit 1
 fi
 
+# Ensure Terraform is available (Cloud Shell no longer bundles it by default)
+if ! command -v terraform &> /dev/null; then
+  echo "Terraform not found. Installing Terraform to \$HOME/bin..."
+  TF_VERSION=$(curl -fsSL https://checkpoint-api.hashicorp.com/v1/check/terraform 2>/dev/null | sed -n 's/.*"current_version":"\([^"]*\)".*/\1/p')
+  TF_VERSION="${TF_VERSION:-1.15.8}"
+  mkdir -p "$HOME/bin"
+  if ! curl -fsSL "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip; then
+    echo "❌ ERROR: Failed to download Terraform. Please install it manually:"
+    echo "   https://developer.hashicorp.com/terraform/install"
+    exit 1
+  fi
+  unzip -o -q /tmp/terraform.zip -d "$HOME/bin"
+  rm -f /tmp/terraform.zip
+  export PATH="$HOME/bin:$PATH"
+  echo "✓ Terraform ${TF_VERSION} installed to \$HOME/bin."
+fi
+
 # Automatically configure the current project
 echo "Setting project to '$PROJECT_ID'..."
 gcloud config set project "$PROJECT_ID"
@@ -96,7 +113,10 @@ cd input_bucket
 
 # Initialize Terraform with local state first
 echo "Initializing Terraform with local state..."
-terraform init
+if ! terraform init; then
+  echo "❌  Terraform initialization failed."
+  exit 1
+fi
 
 # Apply the Terraform configuration to create the bucket
 echo "Applying Terraform configuration to create the input bucket..."
