@@ -180,8 +180,10 @@ fi
 # Check if service accounts already exist
 ADMIN_SA_NAME="${UNIQUE_ID}-bigquery-admin"
 USER_SA_NAME="${UNIQUE_ID}-bigquery-user"
+PROG_SA_NAME="${UNIQUE_ID}-programmatic"
 ADMIN_SA_EMAIL="${ADMIN_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 USER_SA_EMAIL="${USER_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+PROG_SA_EMAIL="${PROG_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 
 echo "Checking if service accounts already exist..."
 if gcloud iam service-accounts list --project="$PROJECT_ID" --filter="email:${ADMIN_SA_EMAIL}" --format="value(email)" | grep -q "${ADMIN_SA_NAME}"; then
@@ -198,6 +200,14 @@ if gcloud iam service-accounts list --project="$PROJECT_ID" --filter="email:${US
 else
   echo "✓ BigQuery User service account will be created"
   USER_SA_EXISTS=false
+fi
+
+if gcloud iam service-accounts list --project="$PROJECT_ID" --filter="email:${PROG_SA_EMAIL}" --format="value(email)" | grep -q "${PROG_SA_NAME}"; then
+  echo "✓ Programmatic access service account already exists, will be reused"
+  PROG_SA_EXISTS=true
+else
+  echo "✓ Programmatic access service account will be created"
+  PROG_SA_EXISTS=false
 fi
 
 # Check if dataset already exists
@@ -247,6 +257,12 @@ if [ "$USER_SA_EXISTS" = true ]; then
     module.service_accounts.google_service_account.bigquery_user "projects/${PROJECT_ID}/serviceAccounts/${USER_SA_EMAIL}" > /dev/null 2>&1 || true
 fi
 
+if [ "$PROG_SA_EXISTS" = true ]; then
+  echo "Importing existing programmatic access service account into Terraform state..."
+  terraform import -auto-approve -var="project=${PROJECT_ID}" \
+    module.programmatic_access.google_service_account.programmatic "projects/${PROJECT_ID}/serviceAccounts/${PROG_SA_EMAIL}" > /dev/null 2>&1 || true
+fi
+
 # Apply Terraform configuration with variables
 echo "Deploying resources (this may take a few minutes) ... "
 terraform apply -auto-approve \
@@ -264,30 +280,32 @@ if [ $DEPLOY_STATUS -eq 0 ]; then
   DATASET_ID=$(terraform output -raw dataset_id 2>/dev/null)
   ADMIN_SA=$(terraform output -raw bigquery_admin_service_account_email 2>/dev/null)
   USER_SA=$(terraform output -raw bigquery_user_service_account_email 2>/dev/null)
+  PROG_SA=$(terraform output -raw programmatic_access_service_account_email 2>/dev/null)
   FUNCTION_URI=$(terraform output -raw function_uri 2>/dev/null)
   
   # Get the service account keys (base64-encoded JSON)
-  ADMIN_KEY=$(terraform output -raw bigquery_admin_key 2>/dev/null)
   USER_KEY=$(terraform output -raw bigquery_user_key 2>/dev/null)
+  PROG_KEY=$(terraform output -raw programmatic_access_key 2>/dev/null)
   
   # Decode the base64 keys to get the JSON content
-  ADMIN_KEY_JSON=$(echo "${ADMIN_KEY}" | base64 --decode)
   USER_KEY_JSON=$(echo "${USER_KEY}" | base64 --decode)
+  PROG_KEY_JSON=$(echo "${PROG_KEY}" | base64 --decode)
   
-  # Create local files and upload them to the input bucket
-  ADMIN_KEY_FILE="${UNIQUE_ID}-bigquery-admin-account.json"
+  # Create local files and upload them to the input bucket (the admin account needs no key file: it is the
+  # identity of the table mapping function)
   USER_KEY_FILE="${UNIQUE_ID}-bigquery-user-account.json"
+  PROG_KEY_FILE="${UNIQUE_ID}-programmatic-access-account.json"
   
-  echo "${ADMIN_KEY_JSON}" > ${ADMIN_KEY_FILE}
   echo "${USER_KEY_JSON}" > ${USER_KEY_FILE}
+  echo "${PROG_KEY_JSON}" > ${PROG_KEY_FILE}
   
   # Upload to the input bucket
   echo "Uploading service account keys to input bucket..."
-  gsutil cp ${ADMIN_KEY_FILE} gs://${BUCKET_NAME}/${ADMIN_KEY_FILE}
   gsutil cp ${USER_KEY_FILE} gs://${BUCKET_NAME}/${USER_KEY_FILE}
+  gsutil cp ${PROG_KEY_FILE} gs://${BUCKET_NAME}/${PROG_KEY_FILE}
   
   # Clean up the local files
-  rm ${ADMIN_KEY_FILE} ${USER_KEY_FILE}
+  rm ${USER_KEY_FILE} ${PROG_KEY_FILE}
 
   echo
   echo
@@ -301,10 +319,12 @@ if [ $DEPLOY_STATUS -eq 0 ]; then
   echo "Dataset ID:           ${DATASET_ID}"
   echo "Admin service account: ${ADMIN_SA}"
   echo "User service account:  ${USER_SA}"
+  echo "Programmatic access service account: ${PROG_SA}"
   echo
   echo "Service account keys saved to:"
-  echo "  - gs://${BUCKET_NAME}/${ADMIN_KEY_FILE}"
-  echo "  - gs://${BUCKET_NAME}/${USER_KEY_FILE}"
+  echo "  - gs://${BUCKET_NAME}/${USER_KEY_FILE} (BigQuery user, e.g. for Grafana)"
+  echo "  - gs://${BUCKET_NAME}/${PROG_KEY_FILE} (programmatic access, e.g. AI agents)"
+  echo "  You can delete them from the bucket after downloading them"
   echo 
   # Get the scheduler name from terraform output
   SCHEDULER_NAME=$(terraform output -raw map_tables_scheduler_name 2>/dev/null)

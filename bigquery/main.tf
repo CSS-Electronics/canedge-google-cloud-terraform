@@ -52,6 +52,16 @@ module "cloud_function" {
 }
 
 
+# Programmatic access (e.g. AI agents): One service account + key for buckets, BigQuery and function logs
+module "programmatic_access" {
+  source             = "./modules/programmatic_access"
+  project            = var.project
+  unique_id          = var.unique_id
+  input_bucket_name  = var.input_bucket_name
+  output_bucket_name = "${var.input_bucket_name}-parquet"
+  dataset_id         = module.dataset.dataset_id
+}
+
 # Cloud Scheduler for daily triggering of the BigQuery Map Tables function
 module "cloud_scheduler_map_tables" {
   source = "./modules/cloud_scheduler_map_tables"
@@ -86,13 +96,17 @@ output "bigquery_user_service_account_email" {
   value = module.service_accounts.bigquery_user_service_account_email
 }
 
-output "bigquery_admin_key" {
-  value     = module.service_accounts.bigquery_admin_key
+output "bigquery_user_key" {
+  value     = module.service_accounts.bigquery_user_key
   sensitive = true
 }
 
-output "bigquery_user_key" {
-  value     = module.service_accounts.bigquery_user_key
+output "programmatic_access_service_account_email" {
+  value = module.programmatic_access.service_account_email
+}
+
+output "programmatic_access_key" {
+  value     = module.programmatic_access.key
   sensitive = true
 }
 

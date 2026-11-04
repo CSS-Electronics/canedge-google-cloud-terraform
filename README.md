@@ -90,6 +90,9 @@ Optional parameters:
 > [!NOTE]  
 > Make sure to upload the ZIP to your input bucket root before deployment 
 
+> [!NOTE]  
+> The deployment saves 2 service account keys in your input bucket root: `<id>-bigquery-user-account.json` (BigQuery user, e.g. for Grafana) and `<id>-programmatic-access-account.json` (programmatic access, e.g. AI agents: buckets, BigQuery queries and the function logs). You can delete them from the bucket after downloading them.
+
 ----------
 
 ## Troubleshooting

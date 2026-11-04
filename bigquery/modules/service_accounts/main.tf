@@ -44,11 +44,8 @@ resource "google_project_iam_member" "storage_object_viewer_role" {
   member  = "serviceAccount:${google_service_account.bigquery_user.email}"
 }
 
-# Create service account keys
-resource "google_service_account_key" "bigquery_admin_key" {
-  service_account_id = google_service_account.bigquery_admin.name
-}
-
+# Create service account keys (user only: the admin account is the identity of the table mapping function and
+# needs no key file)
 resource "google_service_account_key" "bigquery_user_key" {
   service_account_id = google_service_account.bigquery_user.name
 }
