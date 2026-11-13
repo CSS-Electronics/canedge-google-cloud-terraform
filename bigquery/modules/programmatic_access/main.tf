@@ -1,9 +1,11 @@
 /**
 * Programmatic access (e.g. AI agents): One service account + JSON key for the whole data lake
 *
-* - Input bucket: read, list and create objects anywhere; delete/overwrite only .json/.dbc files in the bucket
-*   root (e.g. dbc-groups.json, events.json, DBC files) and device Configuration Files (<device>/config-*.json).
-*   Log files, device.json and other files stay protected (in Cloud Storage, overwriting requires delete)
+* - Input bucket: read, list and create objects anywhere; delete/overwrite only .json files in the bucket root
+*   (e.g. dbc-groups.json, events.json), .dbc files (root or a folder such as dbc/, used via dbc-groups.json) and
+*   device Configuration Files (<device>/config-*.json). Log files, device.json and other files stay protected (in
+*   Cloud Storage, overwriting requires delete). IAM conditions cannot limit the folder depth, so .dbc files are
+*   allowed at any depth (the automation itself only reads DBC files in the root or one folder level)
 * - Output bucket: full object access (e.g. remove Parquet files before a backlog re-run)
 * - BigQuery: run queries (project) + read the data lake dataset (dataset only)
 * - Logs: the CANedge Cloud Functions' logs only (log view + conditional view accessor)
@@ -47,12 +49,12 @@ resource "google_storage_bucket_iam_member" "input_limited_delete" {
   role   = "roles/storage.objectUser"
   member = local.member
   condition {
-    title       = "root-json-dbc-and-device-configs"
-    description = "Delete/overwrite root .json/.dbc files and <device>/config-*.json only"
+    title       = "root-json-dbc-files-and-device-configs"
+    description = "Delete/overwrite root .json files, .dbc files (root or folder) and <device>/config-*.json only"
     expression  = <<-EOT
       resource.type == "storage.googleapis.com/Object" && resource.name.startsWith("${local.objects_prefix}") && (
-        (resource.name.extract("${local.objects_prefix}{folder}/") == "" &&
-          (resource.name.endsWith(".json") || resource.name.endsWith(".dbc"))) ||
+        resource.name.endsWith(".dbc") ||
+        (resource.name.extract("${local.objects_prefix}{folder}/") == "" && resource.name.endsWith(".json")) ||
         (resource.name.extract("${local.objects_prefix}{device}/config-") != "" && resource.name.endsWith(".json")))
     EOT
   }
